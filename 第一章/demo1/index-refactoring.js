@@ -69,7 +69,7 @@ function volumeCreditsFor(aPerformance) {
   // add extra credits for every ten comedy attendees
   // 每十名喜剧观众加一个额外学分
   if ("comedy" === playFor(aPerformance).type)
-  result += Math.floor(aPerformance.audience / 5);
+    result += Math.floor(aPerformance.audience / 5);
   return result;
 }
 
@@ -79,25 +79,38 @@ function usd(aNumber) {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2
-  }).format(aNumber/100);
+  }).format(aNumber / 100);
 }
 
+// 拆分循环
+function totalVolumeCredits(invoice) {
+  let result = 0;
+  for (let perf of invoice.performances) {
+    result += volumeCreditsFor(perf);
+  }
+  return result;
+}
+
+function totalAmount(invoice) {
+  let result = 0;
+  for (let perf of invoice.performances) {
+    result += amountFor(perf);
+  }
+  return result;
+}
+
+
 function statement(invoice, plays) {
-  let totalAmount = 0;
-  let volumeCredits = 0;
   let result = `Statement for ${invoice.customer}\n`;
 
   for (let perf of invoice.performances) {
-    volumeCredits += volumeCreditsFor(perf);
-
     result += ` ${playFor(perf).name}: ${usd(amountFor(perf))} (${
       perf.audience
     } seats\n)`;
-    totalAmount += amountFor(perf);
   }
 
-  result += `Amount owed is ${usd(totalAmount)}\n`;
-  result += `You earned ${volumeCredits} credits\n`;
+  result += `Amount owed is ${usd(totalAmount(invoice))}\n`;
+  result += `You earned ${totalVolumeCredits(invoice)} credits\n`;
 
   return result;
 }
