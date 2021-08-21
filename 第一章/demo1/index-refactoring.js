@@ -37,35 +37,7 @@ function playFor(aPerformance) {
   return plays[aPerformance.playID];
 }
 
-function statement(invoice, plays) {
-  let totalAmount = 0;
-  let volumeCredits = 0;
-  let result = `Statement for ${invoice.customer}\n`;
-  const format = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2
-  }).format;
-
-  for (let perf of invoice.performances) {
-    // add volume credits
-    volumeCredits += Math.max(perf.audience - 30, 0);
-    // add extra credits for every ten comedy attendees
-    // 每十名喜剧观众加一个额外学分
-    if ("comedy" === playFor(perf).type) volumeCredits += Math.floor(perf.audience / 5);
-
-    result += ` ${playFor(perf).name}: ${format(amountFor(perf) / 100)} (${
-      perf.audience
-    } seats\n)`;
-    totalAmount += amountFor(perf);
-  }
-
-  result += `Amount owed is ${format(totalAmount / 100)}\n`;
-  result += `You earned ${volumeCredits} credits\n`;
-
-  return result;
-}
-
+// 提炼根据观众人数及剧目类型收费的逻辑
 function amountFor(aPerformance) {
   let result = 0;
 
@@ -86,6 +58,43 @@ function amountFor(aPerformance) {
     default:
       throw new Error(`Unknown type: ${playFor(aPerformance).type}`);
   }
+  return result;
+}
+
+// 提炼计算观众量积分的逻辑
+function volumeCreditsFor(aPerformance) {
+  let result = 0;
+  // add volume credits
+  result += Math.max(aPerformance.audience - 30, 0);
+  // add extra credits for every ten comedy attendees
+  // 每十名喜剧观众加一个额外学分
+  if ("comedy" === playFor(aPerformance).type)
+  result += Math.floor(aPerformance.audience / 5);
+  return result;
+}
+
+function statement(invoice, plays) {
+  let totalAmount = 0;
+  let volumeCredits = 0;
+  let result = `Statement for ${invoice.customer}\n`;
+  const format = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2
+  }).format;
+
+  for (let perf of invoice.performances) {
+    volumeCredits += volumeCreditsFor(perf);
+
+    result += ` ${playFor(perf).name}: ${format(amountFor(perf) / 100)} (${
+      perf.audience
+    } seats\n)`;
+    totalAmount += amountFor(perf);
+  }
+
+  result += `Amount owed is ${format(totalAmount / 100)}\n`;
+  result += `You earned ${volumeCredits} credits\n`;
+
   return result;
 }
 
